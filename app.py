@@ -210,7 +210,7 @@ def find_candidate_cards(soup: BeautifulSoup) -> List[Tag]:
     return unique
 
 
-def scrape_startups(url: str, limit: int = 10) -> List[Dict[str, object]]:
+def scrape_startups(url: str, limit: Optional[int] = None) -> List[Dict[str, object]]:
     html = get_page_html(url)
     soup = BeautifulSoup(html, "html.parser")
 
@@ -223,7 +223,16 @@ def scrape_startups(url: str, limit: int = 10) -> List[Dict[str, object]]:
             startups.append(parsed)
 
     startups = dedupe_startups(startups)
-    return startups[:limit]
+
+    if limit is not None:
+        return startups[:limit]
+
+    return startups
+
+
+@app.get("/")
+def root():
+    return {"message": "FastAPI scraper is running"}
 
 
 @app.get("/health")
@@ -234,7 +243,7 @@ def health():
 @app.get("/startups")
 def get_startups(
     url: str = Query(..., description="Page to scrape"),
-    limit: int = Query(10, ge=1, le=50),
+    limit: Optional[int] = Query(None, ge=1, description="Optional max number of startups to return"),
 ):
     startups = scrape_startups(url=url, limit=limit)
     return {
