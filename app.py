@@ -1,5 +1,6 @@
 import re
 from typing import List, Dict, Optional
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -13,7 +14,8 @@ HEADERS = {
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
-    )
+    ),
+    "X-Requested-With": "XMLHttpRequest",
 }
 
 ALLOWED_KEYWORDS = {
@@ -50,6 +52,14 @@ def clean_text(text: str) -> str:
 
 def normalize(text: str) -> str:
     return clean_text(text).lower()
+
+
+def build_page_url(base_url: str, page: int) -> str:
+    parsed = urlparse(base_url)
+    query_params = parse_qs(parsed.query)
+    query_params["page"] = [str(page)]
+    new_query = urlencode(query_params, doseq=True)
+    return urlunparse(parsed._replace(query=new_query))
 
 
 def get_page_html(url: str) -> str:
@@ -123,7 +133,6 @@ def parse_what_they_do(section_lines: List[str]) -> Dict[str, object]:
 
 def parse_quick_facts(section_lines: List[str]) -> Dict[str, str]:
     quick_facts_text = " ".join(section_lines)
-
     result = {"hq": ""}
 
     if not quick_facts_text:
@@ -142,7 +151,6 @@ def parse_quick_facts(section_lines: List[str]) -> Dict[str, str]:
 
 def parse_startup_card(card: Tag) -> Optional[Dict[str, object]]:
     name = extract_startup_name(card)
-
     what_they_do_lines = get_section_lines(card, "What they do:")
     quick_fact_lines = get_section_lines(card, "Quick facts:")
 
@@ -210,8 +218,8 @@ def find_candidate_cards(soup: BeautifulSoup) -> List[Tag]:
     return unique
 
 
-def scrape_startups(url: str, limit: Optional[int] = None) -> List[Dict[str, object]]:
-    html = get_page_html(url)
+def scrape_single_page(page_url: str) -> List[Dict[str, object]]:
+    html = get_page_html(page_url)
     soup = BeautifulSoup(html, "html.parser")
 
     cards = find_candidate_cards(soup)
@@ -222,12 +230,49 @@ def scrape_startups(url: str, limit: Optional[int] = None) -> List[Dict[str, obj
         if parsed and is_relevant(parsed):
             startups.append(parsed)
 
-    startups = dedupe_startups(startups)
+    return dedupe_startups(startups)
 
-    if limit is not None:
-        return startups[:limit]
 
-    return startups
+def scrape_startups(
+    base_url: str,
+    limit: Optional[int] = None,
+    max_pages: Optional[int] = None,
+) -> Dict[str, object]:
+    all_startups = []
+    pages_scraped = 0
+    stop_reason = "unknown"
+    page = 1
+
+    while True:
+        if max_pages is not None and page > max_pages:
+            stop_reason = "max_pages_reached"
+            break
+
+        page_url = build_page_url(base_url, page)
+        page_startups = scrape_single_page(page_url)
+        pages_scraped += 1
+
+        if not page_startups:
+            stop_reason = "empty_page"
+            break
+
+        all_startups.extend(page_startups)
+
+        if limit is not None and len(all_startups) >= limit:
+            stop_reason = "limit_reached"
+            all_startups = all_startups[:limit]
+            break
+
+        page += 1
+
+    all_startups = dedupe_startups(all_startups)
+
+    return {
+        "items": all_startups,
+        "pages_scraped": pages_scraped,
+        "last_page_checked": page,
+        "stop_reason": stop_reason,
+    }
 
 
 @app.get("/")
@@ -242,11 +287,16 @@ def health():
 
 @app.get("/startups")
 def get_startups(
-    url: str = Query(..., description="Page to scrape"),
+    url: str = Query(..., description="Base page to scrape"),
     limit: Optional[int] = Query(None, ge=1, description="Optional max number of startups to return"),
+    max_pages: Optional[int] = Query(None, ge=1, description="Optional safety cap on number of pages to scrape"),
 ):
-    startups = scrape_startups(url=url, limit=limit)
+    result = scrape_startups(base_url=url, limit=limit, max_pages=max_pages)
+
     return {
-        "count": len(startups),
-        "items": startups,
+        "count": len(result["items"]),
+        "pages_scraped": result["pages_scraped"],
+        "last_page_checked": result["last_page_checked"],
+        "stop_reason": result["stop_reason"],
+        "items": result["items"],
     }
