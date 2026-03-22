@@ -1,0 +1,96 @@
+[
+  {
+    "name": "Pogo",
+    "description": "Help over 2M+ users earn and save by unlocking the power of their data; engagement on par with Instagram & Twitter; 7-figure revenue per employee.",
+    "tags": [
+      "Consumer",
+      "Mobile App",
+      "FinTech"
+    ],
+    "hq": "Brooklyn, New York, USA"
+  },
+  {
+    "name": "Render",
+    "description": "Help 2M+ developers build, deploy, and scale apps with unparalleled ease",
+    "tags": [
+      "SaaS",
+      "Enterprise Software",
+      "Developer Tools"
+    ],
+    "hq": "San Francisco Bay Area, California, USA"
+  },
+  {
+    "name": "Listen Labs",
+    "description": "Listen Labs is an autonomous market researcher that makes deep customer conversations fast and scalable.",
+    "tags": [
+      "Artificial Intelligence",
+      "Enterprise Software"
+    ],
+    "hq": "San Francisco Bay Area, California, USA"
+  },
+  {
+    "name": "Rilla",
+    "description": "Building the leading conversation intelligence software for offline commerce",
+    "tags": [
+      "Artificial Intelligence",
+      "Sales"
+    ],
+    "hq": "New York, New York, USA"
+  },
+  {
+    "name": "Pylon",
+    "description": "Building all-in-one B2B post-sales support platform powered by conversational data and layered with intelligence",
+    "tags": [
+      "Artificial Intelligence",
+      "SaaS",
+      "Enterprise Software"
+    ],
+    "hq": "San Francisco Bay Area, California, USA"
+  },
+  {
+    "name": "Blossom",
+    "description": "Building AI Copilots & Agents for Psychiatry. Come make mental healthcare affordable, accessible, and clinically-effective for every American.",
+    "tags": [
+      "Artificial Intelligence",
+      "Healthcare"
+    ],
+    "hq": "New York, New York, USA"
+  },
+  {
+    "name": "Adaptive Security",
+    "description": "Protecting companies from AI-powered attacks",
+    "tags": [
+      "Artificial Intelligence",
+      "Cybersecurity",
+      "Enterprise Software"
+    ],
+    "hq": "New York, New York, USA"
+  },
+  {
+    "name": "Avoca",
+    "description": "Building the AI Workforce for Service Businesses",
+    "tags": [
+      "Artificial Intelligence"
+    ],
+    "hq": "New York, New York, USA"
+  },
+  {
+    "name": "Traba",
+    "description": "Building AI agents and other technologies to completely disrupt the industrial supply chain.",
+    "tags": [
+      "Marketplace",
+      "Supply Chain",
+      "Artificial Intelligence"
+    ],
+    "hq": "New York, New York, USA"
+  },
+  {
+    "name": "Harmonic",
+    "description": "",
+    "tags": [
+      "Building mathematical superintelligence",
+      "Artificial Intelligence"
+    ],
+    "hq": "San Francisco Bay Area, California, USA"
+  }
+]
