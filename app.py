@@ -1,6 +1,6 @@
 import re
 from typing import List, Dict, Optional
-from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
+from urllib.parse import urlparse, parse_qs, urlencode, urlunparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup, Tag
@@ -149,6 +149,37 @@ def parse_quick_facts(section_lines: List[str]) -> Dict[str, str]:
     return result
 
 
+def extract_action_links(card: Tag, base_url: str = "https://topstartups.io") -> Dict[str, str]:
+    links = {
+        "linkedin_url": "",
+        "company_website": "",
+        "jobs_url": "",
+    }
+
+    for p in card.find_all("p"):
+        p_text = normalize(p.get_text(" ", strip=True))
+        if "take action:" in p_text:
+            for a in p.find_all("a", href=True):
+                link_text = normalize(a.get_text(" ", strip=True))
+                href = clean_text(a["href"])
+
+                if not href:
+                    continue
+
+                absolute_href = urljoin(base_url, href)
+
+                if "see who works here" in link_text:
+                    links["linkedin_url"] = absolute_href
+                elif "check company site" in link_text:
+                    links["company_website"] = absolute_href
+
+    jobs_link = card.find("a", string=lambda s: s and "View Jobs" in s)
+    if jobs_link and jobs_link.get("href"):
+        links["jobs_url"] = urljoin(base_url, clean_text(jobs_link["href"]))
+
+    return links
+
+
 def parse_startup_card(card: Tag) -> Optional[Dict[str, object]]:
     name = extract_startup_name(card)
     what_they_do_lines = get_section_lines(card, "What they do:")
@@ -156,12 +187,16 @@ def parse_startup_card(card: Tag) -> Optional[Dict[str, object]]:
 
     parsed_wtd = parse_what_they_do(what_they_do_lines)
     facts = parse_quick_facts(quick_fact_lines)
+    action_links = extract_action_links(card)
 
     startup = {
         "name": name,
         "description": parsed_wtd["description"],
         "tags": parsed_wtd["tags"],
         "hq": facts["hq"],
+        "linkedin_url": action_links["linkedin_url"],
+        "company_website": action_links["company_website"],
+        "jobs_url": action_links["jobs_url"],
     }
 
     if not startup["name"] and not startup["description"]:
@@ -201,21 +236,12 @@ def dedupe_startups(rows: List[Dict[str, object]]) -> List[Dict[str, object]]:
 def find_candidate_cards(soup: BeautifulSoup) -> List[Tag]:
     candidate_cards = []
 
-    for tag in soup.find_all(["div", "section", "article"]):
-        text = tag.get_text(" ", strip=True)
+    for card in soup.select("div.card.card-body"):
+        text = card.get_text(" ", strip=True)
         if "What they do:" in text and "Quick facts:" in text:
-            candidate_cards.append(tag)
+            candidate_cards.append(card)
 
-    unique = []
-    seen_texts = set()
-
-    for card in candidate_cards:
-        text_key = clean_text(card.get_text(" ", strip=True))
-        if text_key and text_key not in seen_texts:
-            seen_texts.add(text_key)
-            unique.append(card)
-
-    return unique
+    return candidate_cards
 
 
 def scrape_single_page(page_url: str) -> List[Dict[str, object]]:
