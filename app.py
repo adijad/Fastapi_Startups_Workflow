@@ -153,7 +153,6 @@ def extract_action_links(card: Tag, base_url: str = "https://topstartups.io") ->
     links = {
         "linkedin_url": "",
         "company_website": "",
-        "jobs_url": "",
     }
 
     for p in card.find_all("p"):
@@ -172,10 +171,6 @@ def extract_action_links(card: Tag, base_url: str = "https://topstartups.io") ->
                     links["linkedin_url"] = absolute_href
                 elif "check company site" in link_text:
                     links["company_website"] = absolute_href
-
-    jobs_link = card.find("a", string=lambda s: s and "View Jobs" in s)
-    if jobs_link and jobs_link.get("href"):
-        links["jobs_url"] = urljoin(base_url, clean_text(jobs_link["href"]))
 
     return links
 
@@ -196,7 +191,6 @@ def parse_startup_card(card: Tag) -> Optional[Dict[str, object]]:
         "hq": facts["hq"],
         "linkedin_url": action_links["linkedin_url"],
         "company_website": action_links["company_website"],
-        "jobs_url": action_links["jobs_url"],
     }
 
     if not startup["name"] and not startup["description"]:
